@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/ibidathoillah/Okaerii/releases/latest">
-    <img src="https://img.shields.io/github/v/release/ibidathoillah/Okaerii?style=for-the-badge&color=blue" alt="Latest Release">
+    <img src="https://img.shields.io/github/v/release/ibidathoillah/Okaerii?style=for-the-badge&color=blue&label=Click%20to%20download" alt="Latest Release">
   </a>
   &nbsp;
   <a href="https://github.com/ibidathoillah/Okaerii/releases/download/v1.0.0/Okaerii.dmg">
