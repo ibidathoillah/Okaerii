@@ -26,10 +26,12 @@ Okaerii (おかえり) is a minimalist, open-source macOS menu bar application d
 
 ## Features
 
-- **Menu Bar Native**: Runs entirely in the background with a lightweight footprint. Accessible via a simple `🍵` icon.
-- **Curated Scenes**: Instantly switch between handcrafted soundscapes like "Deep Work", "Midnight Rain", and "Forest Zen".
-- **Custom Mixes**: Create your own perfect atmosphere by mixing layers (Rain, Fire, Birds, Cafe, etc.) and adjusting individual volumes.
-- **Gapless Looping**: Custom audio engine ensures seamless, infinite playback without jarring interruptions.
+- **High-Fidelity Audio**: We prioritize audio quality above all else. Okaerii bundles **studio-grade, uncompressed soundscapes** (Rain, Thunder, Waves, etc.) to ensure a rich, immersive experience without the digital artifacts found in streaming apps.
+- **100% Offline & Private**: All high-quality assets are stored locally. No internet connection required, no buffering, no tracking, and no monthly subscriptions.
+- **Menu Bar Native**: Runs entirely in the background with a lightweight system footprint. Accessible via a simple `🍵` icon.
+- **Curated Scenes**: Instantly switch between handcrafted environments like "Deep Work", "Midnight Rain", and "Forest Zen".
+- **Custom Mixes**: Create your own perfect atmosphere by mixing layers and adjusting individual volumes to your taste.
+- **Gapless Looping**: Our custom audio engine ensures seamless, infinite playback without jarring interruptions.
 - **Minimalist UI**: A clean, distraction-free interface built with SwiftUI.
 
 ## Installation
