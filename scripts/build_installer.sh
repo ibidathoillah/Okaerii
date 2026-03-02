@@ -74,11 +74,27 @@ EOF
 # Convert App Icon (if available, placeholder for now)
 # Ideally we would have an .icns file
 
-echo "💿 Creating DMG..."
-hdiutil create -volname "${APP_NAME}" -srcfolder "${APP_BUNDLE}" -ov -format UDZO "${DMG_NAME}" || {
-    echo "⚠️ DMG creation failed (likely due to sandbox restrictions)."
-    echo "📦 Creating ZIP instead..."
-    zip -r "${APP_NAME}.zip" "${APP_BUNDLE}"
-}
+# Create DMG using create-dmg if available, otherwise fallback to hdiutil
+if command -v create-dmg &> /dev/null; then
+    echo "💿 Creating DMG using create-dmg..."
+    create-dmg \
+      --volname "${APP_NAME}" \
+      --volicon "${APP_BUNDLE}/Contents/Resources/AppIcon.icns" \
+      --window-pos 200 120 \
+      --window-size 800 400 \
+      --icon-size 100 \
+      --icon "${APP_NAME}.app" 200 190 \
+      --hide-extension "${APP_NAME}.app" \
+      --app-drop-link 600 185 \
+      "${DMG_NAME}" \
+      "${APP_BUNDLE}"
+else
+    echo "💿 Creating DMG using hdiutil (create-dmg not found)..."
+    hdiutil create -volname "${APP_NAME}" -srcfolder "${APP_BUNDLE}" -ov -format UDZO "${DMG_NAME}" || {
+        echo "⚠️ DMG creation failed (likely due to sandbox restrictions)."
+        echo "📦 Creating ZIP instead..."
+        zip -r "${APP_NAME}.zip" "${APP_BUNDLE}"
+    }
+fi
 
 echo "✅ Done!"
