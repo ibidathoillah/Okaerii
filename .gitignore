@@ -1,6 +1,43 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xctest
+*.xcuserstate
+
+# Swift Package Manager
 .build/
 .swiftpm/
-DerivedData/
+
+# XcodeGen
 *.xcodeproj
-Okaerii.xcodeproj/
+*.xcworkspace
+
+# Build Artifacts (Installer)
+*.dmg
+*.zip
+Okaerii.app/
+
+# Icon Generation
+AppIcon.iconset/
+# Note: We keep Sources/Okaerii/App/AppIcon.icns as it is a source file now
+
+# Editor Configs
+.idea/
+.vscode/
+*.swp
+*~

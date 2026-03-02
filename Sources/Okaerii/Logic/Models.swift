@@ -5,6 +5,7 @@ import SwiftUI
 // MARK: - Scene Mood
 enum SceneMood: String, Codable, CaseIterable, Identifiable {
     case deepFocus = "Deep Focus"
+    case deepWork = "Deep Work"
     case rainStudy = "Rain Study"
     case sunsetCalm = "Sunset Calm"
     case nightCoding = "Night Coding"
@@ -23,6 +24,7 @@ enum SceneMood: String, Codable, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .deepFocus: return "brain.head.profile"
+        case .deepWork: return "eyeglasses"
         case .rainStudy: return "cloud.rain"
         case .sunsetCalm: return "sunset"
         case .nightCoding: return "moon.stars"
@@ -41,6 +43,7 @@ enum SceneMood: String, Codable, CaseIterable, Identifiable {
     var accentColor: Color {
         switch self {
         case .deepFocus: return .blue
+        case .deepWork: return .indigo
         case .rainStudy: return .cyan
         case .sunsetCalm: return .orange
         case .nightCoding: return .indigo
@@ -151,6 +154,21 @@ struct AmbientScene: Codable, Identifiable, Hashable {
 extension AmbientScene {
     static let defaults: [AmbientScene] = [
         AmbientScene(
+            name: "Birds",
+            mood: .forestSilence,
+            audioLayers: [
+                AudioLayer(type: .birds, volume: 0.8),
+            ]
+        ),
+        AmbientScene(
+            name: "Silent Library",
+            mood: .deepFocus,
+            audioLayers: [
+                AudioLayer(type: .whiteNoise, volume: 0.2),
+                AudioLayer(type: .rain, volume: 0.1)
+            ]
+        ),
+        AmbientScene(
             name: "Midnight Rain",
             mood: .rainStudy,
             audioLayers: [
@@ -161,7 +179,7 @@ extension AmbientScene {
         ),
         AmbientScene(
             name: "Deep Work",
-            mood: .deepFocus,
+            mood: .deepWork,
             audioLayers: [
                 AudioLayer(type: .whiteNoise, volume: 0.4),
                 AudioLayer(type: .keyboard, volume: 0.15)
@@ -185,7 +203,34 @@ extension AmbientScene {
                 AudioLayer(type: .keyboard, volume: 0.25)
             ],
             isPremium: true
-        )
+        ),
+        AmbientScene(
+            name: "Mountain Camp",
+            mood: .alpineDawn,
+            audioLayers: [
+                AudioLayer(type: .fire, volume: 0.5),
+                AudioLayer(type: .wind, volume: 0.2),
+                AudioLayer(type: .birds, volume: 0.1)
+            ]
+        ),
+        AmbientScene(
+            name: "Urban Loft",
+            mood: .cafeVibes,
+            audioLayers: [
+                AudioLayer(type: .cityNoise, volume: 0.3),
+                AudioLayer(type: .rain, volume: 0.2),
+                AudioLayer(type: .cafe, volume: 0.1)
+            ]
+        ),
+        AmbientScene(
+            name: "Stormy Coast",
+            mood: .oceanCalm,
+            audioLayers: [
+                AudioLayer(type: .waves, volume: 0.6),
+                AudioLayer(type: .thunder, volume: 0.3),
+                AudioLayer(type: .wind, volume: 0.4)
+            ]
+        ),
     ]
 }
 

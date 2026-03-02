@@ -15,10 +15,11 @@ let package = Package(
             dependencies: [],
             path: "Sources/Okaerii",
             exclude: [
-                "App/Info.plist"
+                "App/Info.plist",
+                "App/AppIcon.icns"
             ],
             resources: [
-                .copy("Audio"),
+                .process("Audio")
             ]
         )
     ]

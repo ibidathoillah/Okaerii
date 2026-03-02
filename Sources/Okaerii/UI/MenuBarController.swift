@@ -1,4 +1,3 @@
-// Okaerii/UI/MenuBarController.swift
 import AppKit
 import SwiftUI
 
@@ -7,8 +6,15 @@ final class MenuBarController: NSObject, ObservableObject {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
     private var eventMonitor: Any?
+    private var onboardingWindow: NSWindow?
 
     private let sceneManager: SceneManager
+    
+    // Using UserDefaults directly since we are outside SwiftUI view hierarchy
+    private var hasSeenIntro: Bool {
+        get { UserDefaults.standard.bool(forKey: "hasSeenIntro") }
+        set { UserDefaults.standard.set(newValue, forKey: "hasSeenIntro") }
+    }
 
     init(sceneManager: SceneManager) {
         self.sceneManager = sceneManager
@@ -19,13 +25,14 @@ final class MenuBarController: NSObject, ObservableObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "waveform.circle", accessibilityDescription: "Okaerii")
+            button.title = "🍵"
+            button.image = nil
             button.action = #selector(togglePopover)
             button.target = self
         }
 
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 300, height: 400)
+        popover.contentSize = NSSize(width: 300, height: 500)
         popover.behavior = .transient
         popover.animates = true
 
@@ -38,6 +45,52 @@ final class MenuBarController: NSObject, ObservableObject {
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             self?.popover?.performClose(nil)
         }
+        
+        // Check for onboarding
+        if !hasSeenIntro {
+            showOnboardingWindow()
+        }
+    }
+    
+    private func showOnboardingWindow() {
+        // Create window
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
+            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.center()
+        window.title = "Welcome to Okaerii"
+        window.isReleasedWhenClosed = false
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        
+        // Setup content
+        let onboardingView = OnboardingView(isPresented: Binding(
+            get: { !self.hasSeenIntro },
+            set: { [weak self] isPresented in
+                if !isPresented {
+                    // User clicked "Get Started"
+                    self?.hasSeenIntro = true
+                    self?.onboardingWindow?.close()
+                    self?.onboardingWindow = nil
+                    
+                    // Show the popover to indicate where the app lives
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self?.togglePopover()
+                    }
+                }
+            }
+        ))
+        
+        window.contentView = NSHostingView(rootView: onboardingView)
+        window.makeKeyAndOrderFront(nil)
+        
+        // Ensure app is active to show the window
+        NSApp.activate(ignoringOtherApps: true)
+        
+        self.onboardingWindow = window
     }
 
     @objc func togglePopover() {
@@ -50,8 +103,8 @@ final class MenuBarController: NSObject, ObservableObject {
     }
 
     func updateIcon(isPlaying: Bool) {
-        let name = isPlaying ? "waveform.circle.fill" : "waveform.circle"
-        statusItem?.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "Okaerii")
+        statusItem?.button?.title = "🍵"
+        statusItem?.button?.image = nil
     }
 
     deinit {
@@ -64,23 +117,28 @@ final class MenuBarController: NSObject, ObservableObject {
 struct MenuBarPopoverView: View {
     @EnvironmentObject var sceneManager: SceneManager
     @State private var searchText: String = ""
+    @State private var isCreatingScene: Bool = false
+    @State private var isAboutPresented: Bool = false
 
     var body: some View {
         VStack(spacing: 12) {
-            header
-            sceneList
-            bottomBar
+            if isCreatingScene {
+                CreateSceneView(isPresented: $isCreatingScene)
+            } else {
+                header
+                sceneList
+                bottomBar
+            }
         }
         .padding(12)
-        .frame(width: 300, height: 400)
+        .frame(width: 300, height: 500)
         .background(Color.okaerizenBackground)
     }
 
     private var header: some View {
         HStack(spacing: 8) {
-            Image(systemName: "waveform.circle.fill")
-                .font(.system(size: 14))
-                .foregroundStyle(LinearGradient(colors: [Color.okaerizenPrimary, Color.okaerizenAccent], startPoint: .topLeading, endPoint: .bottomTrailing))
+            Text("🍵")
+                .font(.system(size: 16))
 
             Text("Okaerii")
                 .font(.headline)
@@ -93,35 +151,22 @@ struct MenuBarPopoverView: View {
                     .fill(Color.okaerizenAccent)
                     .frame(width: 6, height: 6)
             }
+            
+            Button(action: { withAnimation { isCreatingScene = true } }) {
+                Image(systemName: "plus")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+                .background(Color.primary.opacity(0.05))
+                .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 4)
     }
 
     private var sceneList: some View {
         VStack(spacing: 8) {
-            HStack {
-                Text("SCENES")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                    .tracking(1.0)
-
-                Spacer()
-
-                let filtered = sceneManager.availableScenes.filter {
-                    searchText.isEmpty || $0.name.localizedCaseInsensitiveContains(searchText)
-                }
-
-                Text("\(filtered.count)")
-                    .font(.system(size: 10, weight: .bold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.primary.opacity(0.05))
-                    .clipShape(Capsule())
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 4)
-
             // Search Bar
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
@@ -224,22 +269,78 @@ struct MenuBarPopoverView: View {
             }
             .padding(.horizontal, 4)
 
-            Button(action: { NSApplication.shared.terminate(nil) }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "power")
-                    Text("Quit Okaerii")
+            HStack(spacing: 8) {
+                Button(action: { NSApplication.shared.terminate(nil) }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "power")
+                    }
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color.primary.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(Color.primary.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .buttonStyle(.plain)
+
+                Button(action: { isAboutPresented.toggle() }) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.primary.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $isAboutPresented, arrowEdge: .bottom) {
+                    AboutView()
+                }
             }
-            .buttonStyle(.plain)
         }
         .padding(8)
         .background(Color.primary.opacity(0.02))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+// MARK: - About View
+
+struct AboutView: View {
+    var body: some View {
+        VStack(spacing: 4) {
+            VStack(spacing: 4) {
+                HStack(alignment: .center, spacing: 6) {
+                    Text("Okaerii")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    
+                    Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.primary.opacity(0.05))
+                        .clipShape(Capsule())
+                }
+                
+                Button(action: {
+                    if let url = URL(string: "https://github.com/ibidathoillah") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    Text("@ibidathoillah")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .underline(true, color: .secondary.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+            }
+            
+            Text("Made with 🍵")
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(16)
+        .frame(width: 180)
     }
 }
