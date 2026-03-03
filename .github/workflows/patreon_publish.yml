@@ -1,0 +1,106 @@
+name: Publish to Patreon
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Judul post Patreon
+        required: true
+      content:
+        description: Konten post Patreon (markdown/teks)
+        required: true
+      url:
+        description: Tautan (mis. halaman rilis GitHub)
+        required: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      PATREON_TOKEN: ${{ secrets.PATREON_ACCESS_TOKEN }}
+      PATREON_CAMPAIGN_ID: ${{ secrets.PATREON_CAMPAIGN_ID }}
+    steps:
+      - name: Validasi Secrets
+        run: |
+          if [ -z "$PATREON_TOKEN" ] || [ -z "$PATREON_CAMPAIGN_ID" ]; then
+            echo "PATREON_ACCESS_TOKEN atau PATREON_CAMPAIGN_ID belum diset di repository secrets."
+            exit 1
+          fi
+
+      - name: Siapkan payload dari release
+        id: prepare
+        shell: bash
+        run: |
+          TITLE="${{ github.event.release.name }}"
+          BODY="${{ github.event.release.body }}"
+          LINK="${{ github.event.release.html_url }}"
+
+          if [ -n "${{ github.event.inputs.title }}" ]; then
+            TITLE="${{ github.event.inputs.title }}"
+          fi
+          if [ -n "${{ github.event.inputs.content }}" ]; then
+            BODY="${{ github.event.inputs.content }}"
+          fi
+          if [ -n "${{ github.event.inputs.url }}" ]; then
+            LINK="${{ github.event.inputs.url }}"
+          fi
+
+          CONTENT="${BODY}\n\nDownload: ${LINK}"
+
+          cat > payload.json <<'JSON'
+          {
+            "data": {
+              "type": "post",
+              "attributes": {
+                "title": "REPLACE_TITLE",
+                "content": "REPLACE_CONTENT",
+                "is_draft": false
+              },
+              "relationships": {
+                "campaign": {
+                  "data": { "type": "campaign", "id": "REPLACE_CAMPAIGN_ID" }
+                }
+              }
+            }
+          }
+          JSON
+
+          # Escape quotes and newlines for JSON
+          esc_title=$(printf '%s' "$TITLE" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+          esc_content=$(printf '%s' "$CONTENT" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+
+          # Replace placeholders
+          python3 - <<PY > payload.final.json
+import json
+data = json.load(open('payload.json'))
+data['data']['attributes']['title'] = $esc_title
+data['data']['attributes']['content'] = $esc_content
+data['data']['relationships']['campaign']['data']['id'] = "${PATREON_CAMPAIGN_ID}"
+json.dump(data, open('payload.final.json','w'))
+print("OK")
+PY
+
+          echo "Payload siap:"
+          cat payload.final.json
+
+      - name: Publish ke Patreon
+        shell: bash
+        run: |
+          set -e
+          # Endpoint pembuatan post (Creator Posts API)
+          URL="https://www.patreon.com/api/oauth2/v2/campaigns/${PATREON_CAMPAIGN_ID}/posts"
+          echo "POST $URL"
+          http_code=$(curl -sS -o response.json -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "Authorization: Bearer $PATREON_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @payload.final.json)
+          echo "Status: $http_code"
+          echo "Response:"
+          cat response.json
+          if [ "$http_code" -ge 300 ]; then
+            echo "Gagal publish ke Patreon (HTTP $http_code)"
+            exit 1
+          fi
