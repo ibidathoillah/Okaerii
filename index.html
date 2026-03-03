@@ -4,45 +4,85 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Okaerii — Ambient Soundscapes for Focus, Relaxation, Sleep</title>
+  <meta name="description" content="Okaerii adalah aplikasi macOS menu bar untuk menciptakan suasana fokus, relaksasi, dan tidur dengan audio ambient berkualitas tinggi, sepenuhnya offline dan privat.">
+  <meta property="og:title" content="Okaerii — Ambient Soundscapes for Focus, Relaxation, Sleep">
+  <meta property="og:description" content="Menu bar app macOS untuk soundscape berkualitas tinggi. Fokus, relaksasi, tidur — semua offline dan privat.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ibidathoillah.github.io/Okaerii/">
+  <meta property="og:image" content="https://raw.githubusercontent.com/ibidathoillah/Okaerii/main/assets/welcome-screen.png">
   <link rel="icon" href="https://raw.githubusercontent.com/ibidathoillah/Okaerii/main/Sources/Okaerii/App/AppIcon.icns">
   <style>
     :root { color-scheme: light dark; }
-    body { margin: 0; font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; }
-    .hero { padding: 56px 24px 32px; text-align: center; }
-    .title { font-size: 40px; margin: 0 0 8px; }
-    .subtitle { font-size: 18px; max-width: 760px; margin: 0 auto 24px; opacity: 0.9; }
-    .badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
-    .badges a { text-decoration: none; }
-    .screens { padding: 16px 24px 32px; text-align: center; }
-    .screens img { border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,0.15); }
-    .pair { display: flex; gap: 16px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
-    .pair img { width: 45%; min-width: 280px; max-width: 480px; }
-    .features { max-width: 860px; margin: 0 auto; padding: 0 24px 56px; }
-    .features h2 { text-align: center; margin-bottom: 12px; }
-    .features ul { margin: 0 auto; padding-left: 20px; }
-    .footer { text-align: center; padding: 24px; opacity: 0.7; font-size: 14px; }
-    @media (max-width: 700px) {
-      .title { font-size: 32px; }
-      .subtitle { font-size: 16px; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      background: radial-gradient(1200px 600px at 50% -200px, rgba(0,128,255,0.08), transparent 70%), linear-gradient(180deg, rgba(0,0,0,0.02), transparent);
     }
+    .wrapper { max-width: 1200px; margin: 0 auto; }
+    .hero {
+      padding: 72px 24px 40px;
+      text-align: center;
+    }
+    .title { font-size: 46px; margin: 0 0 10px; letter-spacing: -0.02em; }
+    .subtitle { font-size: 18px; max-width: 840px; margin: 0 auto 24px; opacity: 0.9; }
+    .cta {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 18px auto 0;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 12px 18px; border-radius: 10px; text-decoration: none; font-weight: 600;
+      transition: transform .12s ease, box-shadow .12s ease; will-change: transform;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.primary { background: #007aff; color: #fff; box-shadow: 0 8px 24px rgba(0,122,255,.25); }
+    .btn.dark { background: #222; color: #fff; }
+    .btn.light { background: #f3f3f3; color: #111; }
+    .teaser {
+      margin: 40px auto 0; padding: 14px 16px; border-radius: 12px; max-width: 720px;
+      background: rgba(255,255,255,.5); backdrop-filter: blur(10px);
+    }
+    @media (prefers-color-scheme: dark) {
+      .teaser { background: rgba(35,35,35,.5); }
+      .btn.light { background: #2b2b2b; color: #fff; }
+      .btn.dark { background: #111; }
+    }
+    .screens { padding: 24px; text-align: center; }
+    .screens img { border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
+    .pair { display: flex; gap: 18px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+    .pair img { width: 45%; min-width: 280px; max-width: 500px; }
+    .section { padding: 8px 24px 56px; }
+    .section h2 { text-align: center; font-size: 28px; margin-bottom: 8px; }
+    .grid {
+      display: grid; grid-template-columns: repeat(3, minmax(240px,1fr));
+      gap: 16px; max-width: 1100px; margin: 0 auto;
+    }
+    .card {
+      padding: 16px; border-radius: 14px; background: rgba(255,255,255,.55); backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+    }
+    .card h3 { margin: 0 0 6px; font-size: 18px; }
+    .muted { opacity: .85; }
+    @media (prefers-color-scheme: dark) {
+      .card { background: rgba(28,28,28,.55); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+      body { background: radial-gradient(1200px 600px at 50% -200px, rgba(0,122,255,0.12), transparent 70%), linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+    }
+    .footer { text-align: center; padding: 28px; opacity: 0.7; font-size: 14px; }
   </style>
 </head>
 <body>
-  <section class="hero">
-    <h1 class="title">Okaerii 🍵</h1>
-    <p class="subtitle">A minimalist, open-source macOS menu bar app that crafts high‑fidelity ambient soundscapes to help you focus, relax, or sleep — entirely offline and private.</p>
-    <div class="badges">
-      <a href="https://github.com/ibidathoillah/Okaerii/releases/latest">
-        <img alt="Latest Release" src="https://img.shields.io/github/v/release/ibidathoillah/Okaerii?style=for-the-badge&color=blue">
-      </a>
-      <a href="https://github.com/ibidathoillah/Okaerii/releases/download/v1.0.0/Okaerii.dmg">
-        <img alt="Download for macOS" src="https://img.shields.io/badge/Download-macOS-success?style=for-the-badge&logo=apple">
-      </a>
-      <a href="https://github.com/ibidathoillah/Okaerii">
-        <img alt="View on GitHub" src="https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge&logo=github">
-      </a>
-    </div>
-  </section>
+  <div class="wrapper">
+    <section class="hero">
+      <h1 class="title">Okaerii 🍵</h1>
+      <p class="subtitle">Aplikasi macOS menu bar untuk membangun suasana fokus, relaksasi, dan tidur dengan soundscape ber‑kualitas tinggi. Sepenuhnya offline dan menjaga privasi.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/ibidathoillah/Okaerii/releases/download/v1.0.0/Okaerii.dmg">Download untuk macOS</a>
+        <a class="btn dark" href="https://github.com/ibidathoillah/Okaerii">Lihat di GitHub</a>
+        <a class="btn light" href="https://github.com/ibidathoillah/Okaerii/releases/latest">Versi Terbaru</a>
+      </div>
+      <div class="teaser">Audio ber‑kualitas tinggi disertakan langsung dalam aplikasi untuk pengalaman terbaik — tanpa streaming, buffering, atau langganan.</div>
+    </section>
 
   <section class="screens">
     <p>
@@ -54,18 +94,35 @@
     </div>
   </section>
 
-  <section class="features">
-    <h2>Features</h2>
-    <ul>
-      <li>High‑Fidelity Audio: Bundled studio‑grade soundscapes for a rich, immersive experience.</li>
-      <li>100% Offline & Private: No internet, no buffering, no tracking, no subscriptions.</li>
-      <li>Menu Bar Native: Lightweight, always available via a simple 🍵 icon.</li>
-      <li>Curated Scenes: Handcrafted environments like Deep Work, Midnight Rain, Forest Zen.</li>
-      <li>Custom Mixes: Blend layers and fine‑tune individual volumes to taste.</li>
-      <li>Gapless Looping: Seamless, infinite playback powered by a custom audio engine.</li>
-      <li>Minimalist UI: Clean, distraction‑free interface built with SwiftUI.</li>
-    </ul>
+  <section class="section">
+    <h2>Fitur Utama</h2>
+    <div class="grid">
+      <div class="card"><h3>🎧 Audio High‑Fidelity</h3><p class="muted">Soundscape studio‑grade untuk pengalaman yang kaya dan imersif.</p></div>
+      <div class="card"><h3>🔒 100% Offline & Privat</h3><p class="muted">Tidak ada koneksi internet, buffering, atau pelacakan.</p></div>
+      <div class="card"><h3>🍵 Menu Bar Native</h3><p class="muted">Selalu siap di menu bar dengan footprint ringan.</p></div>
+      <div class="card"><h3>🌲 Scene Terkurasi</h3><p class="muted">Deep Work, Midnight Rain, Forest Zen, dan banyak lagi.</p></div>
+      <div class="card"><h3>🎚️ Custom Mixes</h3><p class="muted">Campur layer dan atur volume sesuai preferensi.</p></div>
+      <div class="card"><h3>♾️ Gapless Looping</h3><p class="muted">Pemutaran mulus tanpa jeda berkat audio engine kustom.</p></div>
+    </div>
   </section>
+
+  <section class="section">
+    <h2>Mengapa Ukuran 50MB?</h2>
+    <div class="grid" style="grid-template-columns: repeat(2, minmax(280px,1fr));">
+      <div class="card"><h3>Kualitas Diutamakan</h3><p class="muted">File audio disertakan langsung agar kualitas tetap maksimal tanpa artefak kompresi dari streaming.</p></div>
+      <div class="card"><h3>Tanpa Internet</h3><p class="muted">Semua berjalan lokal — tidak ada buffering, koneksi, atau kebocoran data.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Cara Install</h2>
+    <div class="grid" style="grid-template-columns: repeat(3, minmax(240px,1fr));">
+      <div class="card"><h3>1. Download</h3><p class="muted">Unduh Okaerii.dmg dari halaman rilis.</p></div>
+      <div class="card"><h3>2. Drag & Drop</h3><p class="muted">Buka DMG, seret Okaerii ke folder Applications.</p></div>
+      <div class="card"><h3>3. Mulai</h3><p class="muted">Klik ikon 🍵 di menu bar untuk mulai mendengarkan.</p></div>
+    </div>
+  </section>
+  </div>
 
   <footer class="footer">
     <div>Made with 🍵 by <a href="https://github.com/ibidathoillah">Ibid Athoillah</a></div>
