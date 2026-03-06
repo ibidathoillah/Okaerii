@@ -16,12 +16,60 @@ final class AudioEngine: ObservableObject {
 
     // MARK: - Layer Nodes
     private var playerNodes: [AudioLayerType: AVAudioPlayerNode] = [:]
-    private var audioFiles: [AudioLayerType: AVAudioFile] = [:]
+    private var audioBuffers: [AudioLayerType: AVAudioPCMBuffer] = [:]
     private var layerVolumes: [AudioLayerType: Float] = [:]
     private var fadeTimers: [AudioLayerType: Timer] = [:]
 
     init() {
         configureEngine()
+        setupNotifications()
+        preloadAllLayers()
+    }
+
+    private func preloadAllLayers() {
+        // Preload buffers in background to avoid blocking UI at startup or during first playback
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            for type in AudioLayerType.allCases {
+                self?.preloadBuffer(for: type)
+            }
+        }
+    }
+
+    private func preloadBuffer(for type: AudioLayerType) {
+        let dummyLayer = AudioLayer(type: type)
+        guard let url = audioFileURL(for: dummyLayer) else { return }
+        
+        do {
+            let audioFile = try AVAudioFile(forReading: url)
+            let buffer = try loadBuffer(from: audioFile)
+            
+            DispatchQueue.main.async { [weak self] in
+                self?.audioBuffers[type] = buffer
+            }
+        } catch {
+            print("[AudioEngine] Failed to preload \(type.rawValue): \(error)")
+        }
+    }
+
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleEngineConfigurationChange),
+            name: .AVAudioEngineConfigurationChange,
+            object: engine
+        )
+    }
+
+    @objc private func handleEngineConfigurationChange() {
+        // When configuration changes (e.g., headphones plugged in/out), 
+        // we might need to restart the engine if it was playing
+        guard isPlaying else { return }
+        
+        // Re-start the engine and re-setup nodes if necessary
+        // AVAudioEngine documentation says we should restart it
+        DispatchQueue.main.async { [weak self] in
+            self?.startEngine()
+        }
     }
 
     private func configureEngine() {
@@ -98,6 +146,7 @@ final class AudioEngine: ObservableObject {
     private func startEngine() {
         guard !engine.isRunning else { return }
         do {
+            engine.prepare()
             try engine.start()
         } catch {
             print("[AudioEngine] Failed to start engine: \(error)")
@@ -105,14 +154,37 @@ final class AudioEngine: ObservableObject {
     }
 
     private func loadAndPlay(layer: AudioLayer, fadeIn: Bool = true) {
-        guard let url = audioFileURL(for: layer) else {
-            print("[AudioEngine] No audio file found for \(layer.type.rawValue)")
-            return
+        // Use cached buffer if available, otherwise load in background
+        if let cachedBuffer = audioBuffers[layer.type] {
+            setupAndStartNode(layer: layer, buffer: cachedBuffer, fadeIn: fadeIn)
+        } else {
+            // Load asynchronously
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
+                
+                guard let url = self.audioFileURL(for: layer) else {
+                    print("[AudioEngine] No audio file found for \(layer.type.rawValue)")
+                    return
+                }
+
+                do {
+                    let audioFile = try AVAudioFile(forReading: url)
+                    let buffer = try self.loadBuffer(from: audioFile)
+                    
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self = self else { return }
+                        self.audioBuffers[layer.type] = buffer
+                        self.setupAndStartNode(layer: layer, buffer: buffer, fadeIn: fadeIn)
+                    }
+                } catch {
+                    print("[AudioEngine] Error loading audio for \(layer.type.rawValue): \(error)")
+                }
+            }
         }
+    }
 
+    private func setupAndStartNode(layer: AudioLayer, buffer: AVAudioPCMBuffer, fadeIn: Bool) {
         do {
-            let audioFile = try AVAudioFile(forReading: url)
-
             if playerNodes[layer.type] != nil {
                 removeLayerNode(layer.type)
             }
@@ -120,10 +192,12 @@ final class AudioEngine: ObservableObject {
             let playerNode = AVAudioPlayerNode()
             engine.attach(playerNode)
 
-            let processingFormat = audioFile.processingFormat
-            engine.connect(playerNode, to: engine.mainMixerNode, format: processingFormat)
+            if !engine.isRunning {
+                startEngine()
+            }
 
-            let buffer = try loadBuffer(from: audioFile)
+            // Ensure we are connected with the correct format
+            engine.connect(playerNode, to: engine.mainMixerNode, format: buffer.format)
 
             if fadeIn {
                 playerNode.volume = 0
@@ -132,23 +206,26 @@ final class AudioEngine: ObservableObject {
             }
 
             playerNodes[layer.type] = playerNode
-            audioFiles[layer.type] = audioFile
             layerVolumes[layer.type] = layer.volume
             activeLayers[layer.type] = layer.volume
 
-            if !engine.isRunning {
-                startEngine()
-            }
-
             playerNode.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
-            playerNode.play()
+            
+            // Only play if the engine is running
+            if engine.isRunning {
+                playerNode.play()
+            } else {
+                startEngine()
+                if engine.isRunning {
+                    playerNode.play()
+                } else {
+                    print("[AudioEngine] Error: Could not play layer \(layer.type.rawValue) because engine failed to start.")
+                }
+            }
 
             if fadeIn {
                 animateVolume(type: layer.type, to: layer.volume, duration: crossfadeDuration)
             }
-
-        } catch {
-            print("[AudioEngine] Error loading audio for \(layer.type.rawValue): \(error)")
         }
     }
 
@@ -170,11 +247,11 @@ final class AudioEngine: ObservableObject {
         fadeTimers.removeValue(forKey: type)
 
         if let node = playerNodes[type] {
+            node.stop()
             engine.detach(node)
         }
 
         playerNodes.removeValue(forKey: type)
-        audioFiles.removeValue(forKey: type)
         layerVolumes.removeValue(forKey: type)
     }
 
@@ -192,16 +269,24 @@ final class AudioEngine: ObservableObject {
         
         // Try to find in bundle
         for ext in ["mp3", "m4a", "wav"] {
+            // First try root of bundle (where .process() usually puts them)
             if let url = bundle.url(forResource: name, withExtension: ext) {
                 return url
             }
+            // Then try Audio subdirectory in bundle
             if let url = bundle.url(forResource: name, withExtension: ext, subdirectory: "Audio") {
+                return url
+            }
+            // Also try with uppercase extensions just in case
+            if let url = bundle.url(forResource: name, withExtension: ext.uppercased()) {
                 return url
             }
         }
         
-        // Try to find in a relative path from the executable (for local dev)
+        // Try to find in a relative path from the executable (for local dev when not in bundle)
         let possiblePaths = [
+            "Sources/Okaerii/Audio/\(name).mp3",
+            "../Sources/Okaerii/Audio/\(name).mp3",
             "../Resources/Audio/\(name).mp3",
             "Resources/Audio/\(name).mp3",
             "Audio/\(name).mp3"
@@ -229,7 +314,7 @@ final class AudioEngine: ObservableObject {
             return
         }
 
-        let steps = 30
+        let steps = 60
         let interval = duration / Double(steps)
         let startVolume = node.volume
         let delta = (targetVolume - startVolume) / Float(steps)

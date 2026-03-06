@@ -55,7 +55,7 @@ final class MenuBarController: NSObject, ObservableObject {
     private func showOnboardingWindow() {
         // Create window
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 450, height: 550),
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -65,6 +65,7 @@ final class MenuBarController: NSObject, ObservableObject {
         window.isReleasedWhenClosed = false
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
         
         // Setup content
         let onboardingView = OnboardingView(isPresented: Binding(

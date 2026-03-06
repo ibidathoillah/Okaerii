@@ -4,12 +4,35 @@ func generateIcon(size: Double) -> NSImage {
     let image = NSImage(size: NSSize(width: size, height: size))
     image.lockFocus()
     
+    // Draw Background
+    let rect = NSRect(x: 0, y: 0, width: size, height: size)
+    let path = NSBezierPath(roundedRect: rect.insetBy(dx: size * 0.05, dy: size * 0.05), xRadius: size * 0.22, yRadius: size * 0.22)
+    
+    // Okaerizen Primary color (approximate from code)
+    let startColor = NSColor(red: 0.41, green: 0.62, blue: 0.53, alpha: 1.0)
+    let endColor = NSColor(red: 0.35, green: 0.55, blue: 0.47, alpha: 1.0)
+    
+    let gradient = NSGradient(starting: startColor, ending: endColor)
+    gradient?.draw(in: path, angle: -45)
+    
+    // Add a subtle inner glow/border
+    path.lineWidth = size * 0.02
+    NSColor.white.withAlphaComponent(0.2).setStroke()
+    path.stroke()
+    
+    // Draw Emoji
     let text = "🍵" as NSString
-    let fontSize = size * 0.9 // Emoji takes up most of the space
+    let fontSize = size * 0.55
     let font = NSFont.systemFont(ofSize: fontSize)
     
+    let shadow = NSShadow()
+    shadow.shadowColor = NSColor.black.withAlphaComponent(0.2)
+    shadow.shadowOffset = NSSize(width: 0, height: -size * 0.03)
+    shadow.shadowBlurRadius = size * 0.05
+    
     let attributes: [NSAttributedString.Key: Any] = [
-        .font: font
+        .font: font,
+        .shadow: shadow
     ]
     
     let stringSize = text.size(withAttributes: attributes)

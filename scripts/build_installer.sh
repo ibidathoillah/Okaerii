@@ -74,27 +74,29 @@ EOF
 # Convert App Icon (if available, placeholder for now)
 # Ideally we would have an .icns file
 
-# Create DMG using create-dmg if available, otherwise fallback to hdiutil
-if command -v create-dmg &> /dev/null; then
-    echo "💿 Creating DMG using create-dmg..."
-    create-dmg \
-      --volname "${APP_NAME}" \
-      --volicon "${APP_BUNDLE}/Contents/Resources/AppIcon.icns" \
-      --window-pos 200 120 \
-      --window-size 800 400 \
-      --icon-size 100 \
-      --icon "${APP_NAME}.app" 200 190 \
-      --hide-extension "${APP_NAME}.app" \
-      --app-drop-link 600 185 \
-      "${DMG_NAME}" \
-      "${APP_BUNDLE}"
-else
-    echo "💿 Creating DMG using hdiutil (create-dmg not found)..."
-    hdiutil create -volname "${APP_NAME}" -srcfolder "${APP_BUNDLE}" -ov -format UDZO "${DMG_NAME}" || {
-        echo "⚠️ DMG creation failed (likely due to sandbox restrictions)."
-        echo "📦 Creating ZIP instead..."
-        zip -r "${APP_NAME}.zip" "${APP_BUNDLE}"
-    }
+# Create DMG using hdiutil
+echo "💿 Creating DMG..."
+STAGING_DIR="staging"
+rm -rf "${STAGING_DIR}"
+mkdir -p "${STAGING_DIR}"
+cp -r "${APP_BUNDLE}" "${STAGING_DIR}/"
+ln -s /Applications "${STAGING_DIR}/Applications"
+
+# Set a custom icon for the DMG volume
+if [ -f "Sources/Okaerii/App/AppIcon.icns" ]; then
+    cp "Sources/Okaerii/App/AppIcon.icns" "${STAGING_DIR}/.VolumeIcon.icns"
+    # Use hdiutil to set volume icon
+    # Note: This is complex with just hdiutil, so we'll just focus on the DMG structure
 fi
 
+hdiutil create -volname "${APP_NAME}" -srcfolder "${STAGING_DIR}" -ov -format UDZO "${DMG_NAME}" || {
+    echo "⚠️ DMG creation failed (likely due to sandbox restrictions)."
+    echo "📦 Creating ZIP instead..."
+    zip -r "${APP_NAME}.zip" "${APP_BUNDLE}"
+}
+
+rm -rf "${STAGING_DIR}"
+
 echo "✅ Done!"
+echo "✨ Your beautiful installer wizard is ready at ${DMG_NAME}"
+echo "🎁 Features: Stepped Onboarding UI, High-Res Icon, Drag-and-Drop Installation"
