@@ -36,6 +36,17 @@ Okaerii (おかえり) is a minimalist, open-source macOS menu bar application d
 
 ## Installation
 
+### Download Official Release
+
+1.  Download the latest **Okaerii.dmg** from [GitHub Releases](https://github.com/ibidathoillah/Okaerii/releases/latest).
+2.  Open the DMG and drag **Okaerii.app** to your **Applications** folder.
+
+> [!IMPORTANT]
+> **macOS Gatekeeper Note:** Since this is an open-source app not signed by an Apple Developer certificate, you may see a message saying "Okaerii is damaged" or "cannot be opened". To fix this, run the following command in your Terminal:
+> ```bash
+> xattr -cr /Applications/Okaerii.app
+> ```
+
 ### From Source
 
 You can run Okaerii directly using Swift Package Manager:
@@ -48,13 +59,22 @@ swift run
 
 ### Building the App
 
-To create a standalone `.app` and `.dmg` installer, run the provided build script:
+To create a standalone `.app` and `.dmg` installer locally:
 
 ```bash
 ./scripts/build_installer.sh
 ```
 
-This will generate `Okaerii.dmg` in the project root directory.
+### Automation (One-Click Release)
+
+To automate the entire Build -> Commit -> Tag -> Push -> GitHub Release flow:
+
+```bash
+chmod +x scripts/release.sh
+./scripts/release.sh
+```
+
+This will guide you through the versioning and release process using the `gh` CLI and our CI/CD pipeline.
 
 ## Development
 
